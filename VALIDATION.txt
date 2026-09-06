@@ -1,0 +1,9 @@
+ghost_count: 24
+has_all_difficulties: True
+has_parvulus: True
+has_model_flicker: True
+has_credits: True
+has_compact_mode: True
+has_reset: True
+has_persistence: True
+no_prototype_title: True
