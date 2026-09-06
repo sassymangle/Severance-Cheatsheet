@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="description" content="Interactive Severance ghost identification cheatsheet with difficulty-aware evidence, forced evidence, hunt speed, model flicker, and practical tells." />
+<title>Severance Ghost Cheatsheet — Mayhem Edition</title>
+<style>
+:root{
+  --bg:#020103; --panel:#120d19; --panel2:#1a1225; --purple:#673aaf; --purple2:#946ce8;
+  --text:#f7f2ff; --muted:#b8aec7; --line:#2d223a; --good:#6fcf97; --bad:#eb6f92; --warn:#f2c94c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#020103 0%,#0b0710 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
+button,select{font:inherit}
+.app{max-width:1500px;margin:0 auto;padding:22px}
+.header{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.header h1{margin:0;font-size:clamp(28px,4vw,44px);letter-spacing:-.03em}
+.header p{margin:6px 0 0;color:var(--muted)}
+.badge{background:rgba(148,108,232,.12);border:1px solid rgba(148,108,232,.35);padding:8px 11px;border-radius:999px;color:#d9c8ff;font-size:13px}
+.controls-wrap{display:block}.controls-panel{margin-bottom:16px}.controls-panel .evidence-list{display:grid;gap:8px}
+.tri{display:flex;align-items:center;gap:10px;background:#0d0912;border:1px solid #251b31;padding:9px 10px;border-radius:12px;cursor:pointer;user-select:none;transition:border-color .15s,background .15s}
+.tri:hover{border-color:#684b82}
+.tri .name{font-size:14px;font-weight:700;flex:1}
+.checkstate{width:24px;height:24px;min-width:24px;border:2px solid #655475;border-radius:5px;background:#09060d;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;line-height:1}
+.tri .state-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);min-width:44px;text-align:right}
+.tri.yes{border-color:rgba(111,207,151,.55);background:rgba(111,207,151,.09)}
+.tri.yes .checkstate{border-color:var(--yes);background:var(--yes);color:#07130c}.tri.yes .checkstate::after{content:"✓"}.tri.yes .state-label{color:#b8f3d0}
+.tri.no{border-color:rgba(235,111,146,.55);background:rgba(235,111,146,.08)}
+.tri.no .checkstate{border-color:var(--no);background:rgba(235,111,146,.18);color:#ffc0d2}.tri.no .checkstate::after{content:"×";font-size:22px}.tri.no .state-label{color:#ffc0d2}
+.behavior-btn{width:100%;text-align:left;border:1px solid #30223e;background:#100a16;color:var(--text);border-radius:11px;padding:10px 11px;cursor:pointer}
+.behavior-btn small{display:block;color:var(--muted);margin-top:3px}.behavior-btn.active{border-color:var(--purple2);background:rgba(103,58,175,.18)}
+.reset{margin-top:14px;width:100%;padding:10px;border-radius:11px;border:1px solid #4a365c;background:#1a1123;color:#fff;cursor:pointer}
+.summary{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.count{font-size:13px;color:var(--muted)}
+.count strong{font-size:28px;color:var(--text);margin-right:6px}
+.legend{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{font-size:12px;border-radius:999px;padding:6px 9px;border:1px solid var(--line);color:var(--muted)}
+.toggle{border:1px solid #4a365c;background:#17101f;color:#ddd0ff;border-radius:999px;padding:7px 10px;cursor:pointer;font-size:12px}.toggle.active{background:rgba(103,58,175,.28);border-color:var(--purple2);color:#fff}
+.ghosts{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{border:1px solid #30223d;background:linear-gradient(180deg,#15101d,#0e0a13);border-radius:15px;padding:14px;position:relative;overflow:hidden;transition:opacity .18s ease,filter .18s ease,border-color .18s ease}
+.card.eliminated{opacity:.24;filter:saturate(.35)}.card.eliminated h4{text-decoration:line-through}.card.eliminated::after{content:"RULED OUT";position:absolute;top:12px;right:12px;font-size:10px;letter-spacing:.08em;color:#ffc0d2;border:1px solid rgba(235,111,146,.5);border-radius:999px;padding:4px 6px;background:rgba(235,111,146,.08)}
+.card h4{margin:0 0 8px;font-size:21px}.ev{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 11px}.tag{font-size:11px;padding:5px 7px;border-radius:999px;background:#21162d;border:1px solid #352443;color:#d9cce9}.tag.forced{border-color:#7a6031;background:#2a2112;color:#f2d899}
+.quickgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.quick{background:#0c0811;border:1px solid #271c33;border-radius:10px;padding:8px}.quick.wide{grid-column:1/-1}.quick .qlabel{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#8f82a0;margin-bottom:3px}.quick .qvalue{font-size:12px;font-weight:700;color:#f3ebff;line-height:1.35}
+.tellbox{margin-top:10px;padding:10px;border:1px solid #38264a;border-radius:11px;background:rgba(103,58,175,.08);font-size:12px;line-height:1.45;color:#ded3eb}.tellbox .telltitle{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#bda4ec;margin-bottom:4px;font-weight:800}.tellbox b{color:#fff}.specialnote{margin-top:8px;font-size:11px;color:#f2d899}
+.note{margin-top:12px;padding:11px;border-radius:11px;background:#0d0912;border:1px dashed #392a48;color:var(--muted);font-size:12px;line-height:1.45}
+footer{margin-top:16px;color:#7f748d;font-size:12px;text-align:center}
+
+/* v0.8 stronger evidence-state feedback */
+.tri.yes{
+  border-color:var(--yes);
+  background:rgba(111,207,151,.24);
+  box-shadow:inset 0 0 0 1px rgba(111,207,151,.55),0 0 0 1px rgba(111,207,151,.10);
+}
+.tri.yes .name{color:#eafff2}
+.tri.yes .checkstate{
+  border-color:#baf2d1;
+  background:var(--yes);
+  color:#07130c;
+  box-shadow:0 0 0 3px rgba(111,207,151,.16);
+}
+.tri.yes .state-label{
+  color:#07130c;
+  background:var(--yes);
+  border-radius:999px;
+  padding:4px 7px;
+  min-width:auto;
+  font-weight:900;
+}
+.tri.no{
+  border-color:var(--no);
+  background:rgba(235,111,146,.17);
+}
+.tri.no .state-label{
+  background:rgba(235,111,146,.18);
+  border:1px solid rgba(235,111,146,.55);
+  border-radius:999px;
+  padding:4px 7px;
+  min-width:auto;
+  font-weight:900;
+}
+
+
+/* v0.9 QoL + layout polish */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.statusline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.statusline .bigcount{font-size:32px;font-weight:900;line-height:1;color:#fff}
+.statusline .statuscopy{font-size:12px;color:var(--muted)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.toolbtn{border:1px solid #49365b;background:#120d18;color:#efe7fa;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:12px;font-weight:700}
+.toolbtn:hover{border-color:var(--purple2);background:#1b1226}
+.toolbtn.active{background:rgba(103,58,175,.28);border-color:var(--purple2)}
+.compact .ghosts{grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:8px}
+.compact .card{padding:10px;border-radius:12px}
+.compact .card h4{font-size:18px;margin-bottom:6px}
+.compact .ev{margin:6px 0 8px}
+.compact .quickgrid{gap:5px;margin-top:6px}
+.compact .quick{padding:6px}
+.compact .tellbox{padding:8px;margin-top:7px}
+@media (max-width:760px){
+  body{padding:10px}
+  .wrap{max-width:none}
+  .panel{padding:10px}
+  .ghosts{grid-template-columns:1fr}
+  .quickgrid{grid-template-columns:1fr}
+  .quick.wide{grid-column:auto}
+  .difficulty{display:grid;grid-template-columns:repeat(2,1fr)}
+  .difficulty button{width:100%}
+}
+
+
+/* v1.0 Mayhem Edition */
+body{background:radial-gradient(circle at 12% -5%,rgba(103,58,175,.28),transparent 31rem),radial-gradient(circle at 95% 6%,rgba(148,108,232,.11),transparent 25rem),linear-gradient(180deg,#050207,#020103 55%,#050207)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.17;background-image:linear-gradient(rgba(148,108,232,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(148,108,232,.035) 1px,transparent 1px);background-size:38px 38px}
+.header{position:relative;overflow:hidden;border:1px solid rgba(148,108,232,.28);background:linear-gradient(135deg,rgba(103,58,175,.25),rgba(14,9,19,.96) 48%,rgba(2,1,3,.99));border-radius:20px;padding:22px;box-shadow:0 18px 55px rgba(0,0,0,.25)}
+.header::after{content:"";position:absolute;width:220px;height:220px;border:1px solid rgba(148,108,232,.16);border-radius:50%;right:-85px;top:-135px;box-shadow:0 0 0 25px rgba(148,108,232,.025),0 0 0 52px rgba(148,108,232,.016)}
+.header h1{font-size:clamp(29px,4vw,45px);letter-spacing:-.045em;line-height:.95;margin:3px 0 8px;background:linear-gradient(90deg,#fff,#ded0ff 58%,#a986ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+.header p{color:#b8abc6;max-width:780px}
+.brand-kicker{font-size:9px;text-transform:uppercase;letter-spacing:.2em;font-weight:900;color:#b49be4;margin-bottom:5px}
+.brand-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.brand-chip{font-size:9px;text-transform:uppercase;letter-spacing:.1em;font-weight:900;color:#cbb9f6;border:1px solid rgba(148,108,232,.28);background:rgba(103,58,175,.08);border-radius:999px;padding:5px 8px}
+.badge{position:relative;z-index:2;border-color:rgba(148,108,232,.4);background:rgba(103,58,175,.13);color:#d8c8f7}
+.panel{border-color:rgba(148,108,232,.19);background:linear-gradient(180deg,rgba(17,11,23,.97),rgba(8,5,12,.99));box-shadow:0 12px 35px rgba(0,0,0,.14)}
+.card{border-color:#30213e;background:linear-gradient(180deg,rgba(23,16,32,.99),rgba(9,6,13,.99));box-shadow:0 8px 22px rgba(0,0,0,.17);transition:transform .12s,border-color .12s,opacity .18s,filter .18s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#946ce8,rgba(103,58,175,.12));opacity:.72}
+.card:hover:not(.eliminated){border-color:#543970;transform:translateY(-1px);box-shadow:0 12px 30px rgba(0,0,0,.24)}
+.card h4{background:linear-gradient(90deg,#fff,#cbb9f6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.quick{background:rgba(4,2,6,.58);border-color:#291d35}
+.tellbox{border-color:rgba(148,108,232,.28);background:linear-gradient(135deg,rgba(103,58,175,.13),rgba(103,58,175,.035))}
+.tag{background:#1b1225;border-color:#352345}.tag.forced{background:rgba(231,201,121,.08);border-color:rgba(231,201,121,.38);color:#efd994}
+.tri:hover{border-color:#7550a3}.tri.yes{box-shadow:inset 3px 0 0 var(--yes)}.tri.no{box-shadow:inset 3px 0 0 var(--no)}
+.statusline .bigcount{font-size:36px;background:linear-gradient(180deg,#fff,#bfa7ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+#difficultyStatus{border-color:rgba(148,108,232,.38);color:#d7c6f7;background:rgba(103,58,175,.10)}
+footer{border-top:1px solid rgba(148,108,232,.12);padding-top:14px;text-align:center}
+footer::after{content:"";}
+
+</style>
+</head>
+<body id="appRoot">
+<div class="app">
+  <div class="header">
+    <div style="position:relative;z-index:2">
+      <div class="brand-kicker">SassyMangle presents</div>
+      <h1>Severance Ghost Cheatsheet</h1>
+      <p>Ghost hunting, minus the guesswork. Evidence, model flicker, hunt speed, and practical tells — built to stay readable while everything else is trying to kill you.</p>
+      <div class="brand-chips"><span class="brand-chip">Mayhem Edition</span><span class="brand-chip">Bring the Mayhem</span><span class="brand-chip">v1.0</span></div>
+    </div>
+    <div class="badge">v1.0 • Mayhem Edition</div>
+  </div>
+
+  <div class="controls-wrap">
+    <section class="panel controls-panel">
+      <h2>Investigation Controls</h2>
+      <label for="difficulty">Difficulty</label>
+      <select id="difficulty">
+        <option>Beginner</option><option>Intermediate</option><option>Professional</option><option>Nightmare</option><option>Severed</option>
+      </select>
+
+      <h3>Evidence</h3>
+      <div style="font-size:11px;color:var(--muted);margin:-3px 0 9px">Click: ✓ Found → × No → Clear</div>
+      <div id="evidenceList" class="evidence-list"></div>
+
+      <button class="reset" id="resetBtn">Reset Investigation</button>
+      <div class="note" id="difficultyNote"></div>
+    </section>
+
+    <main class="panel ghost-panel">
+      <div class="topbar">
+        <div class="statusline"><span class="bigcount" id="candidateCount">0</span><span class="statuscopy">possible ghosts</span><span class="pill" id="difficultyStatus">Beginner</span></div>
+        <div class="toolbar">
+          <button class="toolbtn" id="compactBtn">Compact mode</button>
+          <button class="toolbtn" id="hideEliminatedBtn">Hide ruled-out ghosts</button>
+        </div>
+      </div>
+      <div class="legend"><span class="pill">Evidence + difficulty filter the roster</span><span class="pill">Faded cards = ruled out</span><span class="pill">Difficulty remembered in this browser</span></div>
+      <div id="ghosts" class="ghosts"></div>
+    </main>
+  </div>
+  <footer>Built from Severance reference data and practical ghost-testing notes. Evidence filters the roster; each card keeps speed, flicker, and the fastest practical tell visible.<br><span style="display:inline-block;margin-top:6px;color:#9b8baa">Severance developed by <strong style="color:#cbb9f6">Sykes Games</strong> • Practical ghost notes provided by <strong style="color:#cbb9f6">llnutcracker</strong></span></footer>
+</div>
+<script>
+const NORMAL_EVIDENCES=["Laser Grid","EMF5","EVP","Fingerprints","Freezing","Ghost Orbs","Painting","Possession"];
+const SEVERED_EVIDENCES=["EVP","Freezing","Laser Grid","Ghost Orbs","Painting","UV"];
+const ALL_EVIDENCES=[...new Set([...NORMAL_EVIDENCES,...SEVERED_EVIDENCES])];
+const ghosts=[
+{name:"Banshee",e:["Laser Grid","EVP","Ghost Orbs"],forced:{Nightmare:["EVP"],Severed:["EVP"]},speed:"Normal LOS",flicker:"Normal flicker",test:"EVP",tell:"30% unique EVP; any EVP response drains 15 sanity"},
+{name:"Demon",e:["EMF5","Painting","Possession"],speed:"Standard",flicker:"Normal flicker",test:"Stun / Hunt",tell:"Stun lasts 6s; 60s hunt cooldown; 70% threshold"},
+{name:"Deogen",e:["Laser Grid","Painting","Possession"],speed:"Slower max LOS (16s)",flicker:"Fast while target is seen; slow when LOS is lost",test:"Flicker / LOS",tell:"Flicker becomes more visible as LOS builds"},
+{name:"Dullahan",e:["EVP","Painting","Possession"],speed:"2.55 moving / 2.35 still",flicker:"No unique flicker tell noted",test:"Movement",tell:"Target movement changes speed and hunt threshold"},
+{name:"Dyre",e:["Laser Grid","EMF5","EVP"],speed:"Standard",flicker:"Slow flicker",test:"Flicker / Smudge",tell:"Less-visible hunt blink; smudging ghost room does not increase cooldown"},
+{name:"Ghoul",e:["Fingerprints","Freezing","Possession"],speed:"Standard",flicker:"Normal flicker",test:"Breaker / Stun",tell:"Cannot be stunned while breaker is OFF"},
+{name:"Goryo",e:["Laser Grid","EVP","Freezing"],speed:"Standard",flicker:"Normal flicker",test:"Temperature",tell:"Does not cool its current room like other ghosts"},
+{name:"Hantu",e:["Laser Grid","Freezing","Ghost Orbs"],forced:{Nightmare:["Freezing"],Severed:["Freezing"]},speed:"Temperature dependent",flicker:"No unique flicker tell noted",test:"Temperature / Speed",tell:"Very fast -10–4°C; normal 4–6°C; slow 6–10°C"},
+{name:"Jinn",e:["EMF5","Fingerprints","Freezing"],speed:"Standard",flicker:"Normal flicker",test:"Lights / Lanterns",tell:"Cannot hunt in lit room; no LOS gain in lit room / near lit lantern"},
+{name:"Mare",e:["EVP","Ghost Orbs","Possession"],speed:"Max LOS near electronics",flicker:"No unique flicker tell noted",test:"Electronics",tell:"Reaches max LOS quickly while in sight near electronics"},
+{name:"Mogwai",e:["Ghost Orbs","Painting","Possession"],speed:"Standard",flicker:"Breaker ON = slow; breaker OFF = fast",test:"Breaker / Flicker",tell:"Breaker ON = less visible flicker; OFF = more visible"},
+{name:"Myling",e:["EMF5","Ghost Orbs","Painting"],speed:"Faster LOS",flicker:"No unique flicker tell noted",test:"Photo",tell:"Hunt photo makes it disappear for 2 seconds"},
+{name:"Obake",e:["Laser Grid","Fingerprints","Ghost Orbs"],forced:{Nightmare:["Laser Grid"],Severed:["Laser Grid"]},speed:"Standard",flicker:"Cycles through normal, slow, and fast flicker",test:"Camera / Flicker",tell:"Laser Grid only through camera; 5s flicker cycle"},
+{name:"Oni",e:["Laser Grid","EMF5","Possession"],speed:"Standard",flicker:"Fast flicker",test:"Door Slam EMF",tell:"Door slam always emits EMF 3; visible flicker"},
+{name:"Parvulus",e:["Laser Grid","EVP","Painting"],specialAlways:["Ghost Orbs"],speed:"Mimics another ghost",flicker:"Mimics the selected ghost’s flicker behavior",test:"Orbs / Mimic",tell:"Always creates Ghost Orbs, even Severed; orbs do NOT identify it"},
+{name:"Phantom",e:["Fingerprints","Freezing","Ghost Orbs"],speed:"Standard",flicker:"Slow flicker",test:"Salt / Photo",tell:"Cannot stand in salt; hunt photo disappears 2s; less-visible flicker"},
+{name:"Poltergeist",e:["EVP","Fingerprints","Possession"],speed:"Standard",flicker:"Normal flicker",test:"Throws / Lanterns",tell:"Thrown objects blow out all nearby lanterns"},
+{name:"Revenant",e:["EMF5","EVP","Fingerprints"],speed:"2.85 >6m / 2.50 <6m",flicker:"No unique flicker tell noted",test:"Distance",tell:"Fast beyond 6m; slower within 6m"},
+{name:"Shade",e:["EVP","Fingerprints","Painting"],forced:{Nightmare:["Painting"],Severed:["Painting"]},speed:"Standard",flicker:"Normal flicker",test:"Painting",tell:"Unique Shade painting; Painting forced on reduced evidence"},
+{name:"Spirit",e:["EMF5","Freezing","Ghost Orbs"],speed:"Fixed 2.55 m/s",flicker:"No unique flicker tell noted",test:"Speed / Smudge",tell:"Fixed speed; smudging ghost room does not increase cooldown"},
+{name:"Strey",e:["EVP","Freezing","Painting"],forced:{Nightmare:["Ghost Orbs"],Severed:["Ghost Orbs"]},speed:"Standard",flicker:"Normal flicker",test:"Orbs / Lanterns",tell:"Forced Ghost Orbs on reduced evidence; may show two orbs"},
+{name:"Thaye",e:["Laser Grid","Fingerprints","Painting"],speed:"2.65 young → 2.40 old",flicker:"No unique flicker tell noted",test:"Aging",tell:"Ages while investigator is in ghost room; speed/threshold fall"},
+{name:"Wraith",e:["Fingerprints","Ghost Orbs","Painting"],forced:{Nightmare:["UV"],Severed:["UV"]},speed:"Standard",flicker:"Normal flicker",test:"UV / Salt",tell:"Unique smeared UV; never leaves UV footprints through salt"},
+{name:"Yurei",e:["Freezing","Painting","Possession"],speed:"Breaker-dependent LOS",flicker:"No unique flicker tell noted",test:"Breaker / Speed",tell:"Breaker OFF = faster LOS + 65% threshold; ON = slower + 35%"}
+];
+const evidenceState=Object.fromEntries(ALL_EVIDENCES.map(e=>[e,"unknown"]));
+let difficulty="Beginner";
+let hideEliminated=false;
+let compactMode=false;
+try{difficulty=localStorage.getItem("severanceDifficulty")||difficulty;}catch(e){}
+
+function isReduced(){return difficulty==="Nightmare"||difficulty==="Severed"}
+function activeEvidences(){return difficulty==="Severed" ? SEVERED_EVIDENCES : NORMAL_EVIDENCES;}
+function qualifiesEvidence(g,ev){
+  if(difficulty==="Severed") return (g.specialAlways||[]).includes(ev)||((g.forced?.Severed||[]).includes(ev));
+  return g.e.includes(ev)||(g.specialAlways||[]).includes(ev)||((g.forced?.[difficulty]||[]).includes(ev));
+}
+function evidencePass(g){
+  for(const ev of activeEvidences()){
+    const st=evidenceState[ev]; if(st==="unknown") continue;
+    if(st==="yes" && !qualifiesEvidence(g,ev)) return false;
+    if(st==="no"){
+      if(difficulty==="Severed") {
+        // Every visible evidence option in Severed is guaranteed/special. A confident NO can exclude it.
+        if(qualifiesEvidence(g,ev)) return false;
+      } else if(!isReduced() && g.e.includes(ev)) return false;
+      else {
+        // Nightmare: only forced/special evidence can be safely excluded by a confident NO.
+        const forced=((g.forced?.[difficulty]||[]).includes(ev)||(g.specialAlways||[]).includes(ev));
+        if(forced) return false;
+      }
+    }
+  }
+  return true;
+}
+function renderEvidence(){const el=document.getElementById("evidenceList");el.innerHTML="";
+  activeEvidences().forEach(ev=>{
+    const st=evidenceState[ev]||"unknown";
+    const row=document.createElement("div");
+    row.className=`tri ${st==="yes"?"yes":st==="no"?"no":""}`;
+    row.setAttribute("role","checkbox");
+    row.setAttribute("aria-checked",st==="yes"?"true":st==="no"?"mixed":"false");
+    row.setAttribute("tabindex","0");
+    const label=st==="yes"?"Found":st==="no"?"No":"";
+    row.innerHTML=`<span class="checkstate" aria-hidden="true"></span><div class="name">${ev}</div><span class="state-label">${label}</span>`;
+    const cycle=()=>{evidenceState[ev]=st==="unknown"?"yes":st==="yes"?"no":"unknown";render();};
+    row.onclick=cycle;
+    row.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();cycle();}};
+    el.appendChild(row);
+  });
+}
+function renderNote(){let text="";
+  if(difficulty==="Nightmare") text="Nightmare: 2 of the ghost's normal 3 evidences remain available. A missing normal evidence is not a safe elimination because it may be the hidden one. Forced/special evidence still matters.";
+  else if(difficulty==="Severed") text="Severed: 0 normal evidence. Only forced/special evidence is shown above. Found or confidently ruled-out forced evidence can filter the roster; all other identification comes from the tells on the ghost cards.";
+  else text=`${difficulty}: all 3 normal ghost evidences are available. Confidently ruling out a required evidence can eliminate that ghost.`;
+  document.getElementById("difficultyNote").textContent=text;
+}
+function renderGhosts(){
+  const evaluated=ghosts.map(g=>({g,possible:evidencePass(g)}));
+  const possibleCount=evaluated.filter(x=>x.possible).length;
+  document.getElementById("candidateCount").textContent=possibleCount;
+  const ds=document.getElementById("difficultyStatus");if(ds)ds.textContent=difficulty;
+  document.getElementById("appRoot").classList.toggle("compact",compactMode);
+  const el=document.getElementById("ghosts");el.innerHTML="";
+
+  evaluated
+    .sort((a,b)=>(b.possible-a.possible)||a.g.name.localeCompare(b.g.name))
+    .forEach(({g,possible})=>{
+      if(hideEliminated && !possible) return;
+      const card=document.createElement("div");
+      card.className=`card ${possible?"":"eliminated"}`;
+
+      const forced=(g.forced?.[difficulty]||[]);
+      const special=(g.specialAlways||[]);
+      let specialLine="";
+      if(forced.length) specialLine+=`<div class="specialnote"><b>${difficulty}:</b> guaranteed ${forced.join(", ")}</div>`;
+      if(special.length) specialLine+=`<div class="specialnote"><b>Special:</b> always produces ${special.join(", ")}.</div>`;
+
+      const evidenceTags = difficulty==="Severed"
+        ? `<span class="tag">Normal evidence hidden</span>${forced.map(x=>`<span class="tag forced">Forced: ${x}</span>`).join('')}${special.map(x=>`<span class="tag forced">Always: ${x}</span>`).join('')}`
+        : `${g.e.map(x=>`<span class="tag">${x}</span>`).join('')}${forced.map(x=>`<span class="tag forced">Forced: ${x}</span>`).join('')}${special.map(x=>`<span class="tag forced">Always: ${x}</span>`).join('')}`;
+
+      card.innerHTML=`<h4>${g.name}</h4>
+        <div class="ev">${evidenceTags}</div>
+        <div class="quickgrid">
+          <div class="quick"><span class="qlabel">Hunt / Speed</span><span class="qvalue">${g.speed}</span></div>
+          <div class="quick"><span class="qlabel">Model Flicker</span><span class="qvalue">${g.flicker}</span></div>
+          <div class="quick wide"><span class="qlabel">Best Check</span><span class="qvalue">${g.test}</span></div>
+        </div>
+        <div class="tellbox"><span class="telltitle">Tell</span>${g.tell}</div>${specialLine}`;
+      el.appendChild(card);
+    });
+
+  if(!possibleCount){
+    el.insertAdjacentHTML("afterbegin",`<div class="note">No ghosts match the current evidence combination. Check whether an evidence was marked Found/No incorrectly, or whether the selected difficulty changes how that evidence should be interpreted.</div>`);
+  }
+
+  const toggle=document.getElementById("hideEliminatedBtn");
+  toggle.textContent=hideEliminated?"Show ruled-out ghosts":"Hide ruled-out ghosts";
+  toggle.classList.toggle("active",hideEliminated);
+  const compactBtn=document.getElementById("compactBtn");
+  compactBtn.textContent=compactMode?"Normal mode":"Compact mode";
+  compactBtn.classList.toggle("active",compactMode);
+}
+function render(){const select=document.getElementById("difficulty");if(select)select.value=difficulty;renderEvidence();renderNote();renderGhosts();}
+document.getElementById("difficulty").onchange=e=>{
+  difficulty=e.target.value;
+  try{localStorage.setItem("severanceDifficulty",difficulty);}catch(err){}
+  // Clear evidence states that are not available on the newly selected difficulty.
+  ALL_EVIDENCES.forEach(ev=>{ if(!activeEvidences().includes(ev)) evidenceState[ev]="unknown"; });
+  render();
+};
+document.getElementById("resetBtn").onclick=()=>{ALL_EVIDENCES.forEach(e=>evidenceState[e]="unknown");hideEliminated=false;compactMode=false;render();};
+document.getElementById("hideEliminatedBtn").onclick=()=>{hideEliminated=!hideEliminated;renderGhosts();};
+document.getElementById("compactBtn").onclick=()=>{compactMode=!compactMode;renderGhosts();};
+render();
+</script>
+</body>
+</html>
